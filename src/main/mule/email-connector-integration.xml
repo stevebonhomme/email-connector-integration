@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="3a64967e-53c2-40d7-aac0-52d099e71ed8" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="f8af84b9-d0f7-47ef-a356-037669eb423c" >
+		<email:smtp-connection host="${config.email.host}" port="${config.email.port}" user="${secure::config.email.user}" password="${secure::config.email.password}" timeoutUnit="MINUTES">
+			<email:properties >
+				<email:property key="mail.smtp.starttls.enable" value="true" />
+			</email:properties>
+		</email:smtp-connection>
+	</email:smtp-config>
+	<tls:context name="TLS_Context" doc:name="TLS Context" doc:id="7bfaf524-7052-4df5-ac76-361938471212" >
+		<tls:trust-store path="truststore.jks" password="Jerico7875!" type="jks" insecure="true"/>
+		<tls:key-store type="jks" path="server-keystore.jks" alias="localhost" keyPassword="Jerico7875!" password="Jerico7875!" />
+	</tls:context>
+	<configuration-properties doc:name="Configuration properties" doc:id="b17a3b71-2f08-439f-a93f-1edafbbbddb5" file="mule-app.properties" />
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="629a8ead-9d70-488d-a899-d0b6d8200512" file="mule-app.properties" key="${key}" />
+	<api-gateway:autodiscovery apiId="19711625" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="ece576fe-1ee9-4a59-b3ef-923011b05c15" flowRef="send-email-main" />
+	<flow name="email-connector-send" doc:id="8f8b3396-623d-4680-81e5-99947ab44896" >
+		<email:send doc:name="Send" doc:id="abdf2cfa-bf6f-4e90-919f-929905666ca7" config-ref="Email_SMTP" fromAddress="#[payload.from]" subject='#[payload.subject]' toAddresses="#[payload.emailTo]">
+			<email:headers ><![CDATA[#[output application/java
+---
+{
+	"Importance" : payload.importance default "low"
+}]]]></email:headers>
+			<email:body contentType="text/plain" >
+				<email:content ><![CDATA[#[payload.content]]]></email:content>
+			</email:body>
+		</email:send>
+	</flow>
+</mule>
